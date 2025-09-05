@@ -1,8 +1,8 @@
-import torch, random
-import numpy as np
-from pathlib import Path
+import torch
 from typing import Tuple, Dict, List
 import os
+
+import src.general.utils as utils
 
 def availableDevices() -> torch.device:
     """ Available Devices
@@ -36,8 +36,7 @@ def setSeeds(seed: int = 42) -> None:
     """
     
     # set the seed for random and numpy random processes
-    random.seed(seed)
-    np.random.seed(seed)  
+    utils.setSeeds()
 
     # Set the seed for general torch operations
     torch.manual_seed(seed)

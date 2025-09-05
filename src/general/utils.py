@@ -1,5 +1,20 @@
 import os
 import shutil
+import random
+import numpy as np
+
+def setSeeds(seed: int = 42) -> None:
+    """ Set seeds for random and numpy random.
+
+    Parameters
+    ----------
+    seed : int, optional
+        Random seed to set, by default 42.
+    """
+    
+    # set the seed for random and numpy random processes
+    random.seed(seed)
+    np.random.seed(seed) 
 
 def createDirectory(dirPath: str,
                     verbose: bool = False
