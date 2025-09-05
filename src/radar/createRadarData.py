@@ -137,8 +137,10 @@ def saveInfo(dataPath: str,
         Number of evaluation data samples.
     """
     
+    fileName = f"{dataPath}/info.txt"
+    
     try:
-        with open(f"{dataPath}/info.txt", "x") as f:  # "x" = create, fail if exists
+        with open(fileName, "w") as f:  # "x" = create, fail if exists
             # write the params
             f.write("SAMPLES\n")
             f.write(f"Training Samples: {nTrainData}\n")
@@ -154,8 +156,12 @@ def saveInfo(dataPath: str,
             f.write(f"Sample Rate: {radarParams['sampleRate']} Hz\n")
             
             f.close()
-    except FileExistsError:
-        pass
+    except PermissionError:
+        print(f"Permission denied: Unable to create '{fileName}'.")
+        raise
+    except Exception as error:
+        print(f"An error occurred: {error}")
+        raise
 
 def createSignalData(nDataSamples: int,
                      dataPath: str,
