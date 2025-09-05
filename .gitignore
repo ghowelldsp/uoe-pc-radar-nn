@@ -2,5 +2,6 @@
 
 /data
 /testing
+/results
 
 __pycache__

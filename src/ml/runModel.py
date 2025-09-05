@@ -233,7 +233,7 @@ def trainModel(datasetPath: str,
         Verbose output.
     """
     
-    print(f"\nDataset: {datasetPath}")
+    print(f"\nRunning on dataset: {datasetPath}")
     
     # set random seed 
     setSeeds()

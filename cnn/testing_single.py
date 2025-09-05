@@ -7,7 +7,7 @@ from src.ml.runModel import trainModels
 if __name__ == "__main__":
     
     # dataset to train on
-    datasets = {"testing": 
+    datasets = {"testing_single": 
                     [
                         ["complex gaussian"], 
                         ["10"], 
@@ -16,7 +16,7 @@ if __name__ == "__main__":
                 }
     
     # model parameters
-    modelParams = {"nEpochs": 3,
+    modelParams = {"nEpochs": 1,
                    "batchSize": 2,
                    "modelType": "dynamicCNN1",
                    "loss function": "Cross Entropy Loss",

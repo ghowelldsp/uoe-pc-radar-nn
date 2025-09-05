@@ -2,6 +2,7 @@ import os
 import shutil
 import random
 import numpy as np
+from pathlib import Path
 
 def setSeeds(seed: int = 42) -> None:
     """ Set seeds for random and numpy random.
@@ -16,7 +17,7 @@ def setSeeds(seed: int = 42) -> None:
     random.seed(seed)
     np.random.seed(seed) 
 
-def createDirectory(dirPath: str,
+def createDirectory(dirPath: str | Path,
                     verbose: bool = False
                     ) -> None:
     """ Creates the directory specified by the directory path

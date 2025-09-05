@@ -5,6 +5,7 @@ import numpy as np
 import datetime
 import inspect
 import os
+from pathlib import Path
 from typing import TypedDict, Dict, List
 
 from src.general.utils import createDirectory
@@ -61,7 +62,7 @@ class modelInfoDict(TypedDict):
     nEvalBatchs: int
     nEvalSamples: int
 
-def saveTrainTestResults(datasetResultsPath: str,
+def saveTrainTestResults(datasetPathResults: Path,
                          fileName: str,
                          results: Dict[str, List]
                          ) -> None:
@@ -69,7 +70,7 @@ def saveTrainTestResults(datasetResultsPath: str,
 
     Parameters
     ----------
-    datasetResultsPath : str
+    datasetResultsPath : Path
         Path to dataset.
     fileName : str
         Name of the results file.
@@ -89,9 +90,9 @@ def saveTrainTestResults(datasetResultsPath: str,
     """
     
     # save results
-    np.save(f"{datasetResultsPath}/{fileName}_TT_data.npy", results) # type: ignore
+    np.save(f"{datasetPathResults}/{fileName}_TT_data.npy", results) # type: ignore
     
-def saveProbTargetResults(datasetResultsPath: str,
+def saveProbTargetResults(datasetPathResults: Path,
                           fileName: str,
                           results: Dict[str, np.ndarray]
                           ) -> None:
@@ -101,7 +102,7 @@ def saveProbTargetResults(datasetResultsPath: str,
 
     Parameters
     ----------
-    datasetResultsPath : str
+    datasetResultsPath : Path
         Path to dataset.
     fileName : str
         Name of the results file.
@@ -110,9 +111,9 @@ def saveProbTargetResults(datasetResultsPath: str,
     """
     
     # save results
-    np.save(f"{datasetResultsPath}/{fileName}_PT_data.npy", results) # type: ignore
+    np.save(f"{datasetPathResults}/{fileName}_PT_data.npy", results) # type: ignore
     
-def saveInfoResults(datasetResultsPath: str,
+def saveInfoResults(datasetPathResults: Path,
                     fileName: str,
                     modelInfo: modelInfoDict,
                     results: Dict[str, List],
@@ -121,7 +122,7 @@ def saveInfoResults(datasetResultsPath: str,
 
     Parameters
     ----------
-    datasetResultsPath : str
+    datasetPathResults : Path
         Path to dataset.
     fileName : str
         Name of the results file.
@@ -143,7 +144,7 @@ def saveInfoResults(datasetResultsPath: str,
     """
     
     # create and open the file
-    f = open(f"{datasetResultsPath}/{fileName}_info.txt", "w")
+    f = open(f"{datasetPathResults}/{fileName}_info.txt", "w")
     
     # get the current date and time
     dt = datetime.datetime.now()
@@ -231,25 +232,37 @@ def saveAllResults(datasetPath: str,
     
     # create the results folder
     print("creating the results directory ...")
-    datasetResultsPath = f"{datasetPath}/results"
-    createDirectory(datasetResultsPath, verbose=True)
+    createDirectory(f"../results", verbose=True)
+    
+    # change the data directory to results in dataset path
+    datasetPathOld = Path(datasetPath) # type: ignore
+    datasetPathParts = list(datasetPathOld.parts)
+    datasetPathParts[1] = "results"
+    datasetPathResults = Path(*datasetPathParts)
+    
+    # create the dataset results directory
+    datasetPathParts = datasetPathResults.parts
+    createDirectory(Path(*datasetPathParts[:3]), verbose=True)
+    createDirectory(Path(*datasetPathParts[:4]), verbose=True)
+    createDirectory(datasetPathResults, verbose=True)
     
     # get the name of the cnn script that called it
     callerFrame = inspect.stack()[3] # TODO - not sure I like hardcoding this, but works for now
     fileName, _ = os.path.splitext(os.path.basename(callerFrame.filename))
     
     # save info results
-    saveInfoResults(datasetResultsPath=datasetResultsPath,
+    saveInfoResults(datasetPathResults=datasetPathResults,
                     fileName=fileName,
                     modelInfo=modelInfo,
                     results=resultsTT)
     
     # save train and test accuracies
-    saveTrainTestResults(datasetResultsPath=datasetResultsPath,
+    saveTrainTestResults(datasetPathResults=datasetPathResults,
                          fileName=fileName,
                          results=resultsTT)
     
     # save probability and target results
-    saveProbTargetResults(datasetResultsPath=datasetResultsPath,
+    saveProbTargetResults(datasetPathResults=datasetPathResults,
                           fileName=fileName,
                           results=resultsPT)
+    
