@@ -232,7 +232,7 @@ def saveAllResults(datasetPath: str,
     # create the results folder
     print("creating the results directory ...")
     datasetResultsPath = f"{datasetPath}/results"
-    createDirectory(datasetResultsPath)
+    createDirectory(datasetResultsPath, verbose=True)
     
     # get the name of the cnn script that called it
     callerFrame = inspect.stack()[3] # TODO - not sure I like hardcoding this, but works for now

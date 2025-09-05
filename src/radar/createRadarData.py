@@ -77,25 +77,29 @@ def createExampleSignal(radarParams: dict) -> None:
         
     plt.show()
         
-def __createDirectories(dataPath: str) -> None:
+def __createDirectories(dataPath: str,
+                        verbose: bool = False
+                        ) -> None:
     """ Creates all the directories required for the data.
 
     Parameters
     ----------
     dataPath : str
         Path to the main directory folder.
+    verbose : bool
+        Print debug information, defaults to False.
     """
     
     # remove and create specified folders in path directory
-    removeDirectory(dataPath)
-    createDirectory(dataPath)
+    removeDirectory(dataPath, verbose=verbose)
+    createDirectory(dataPath, verbose=verbose)
     
     for signalType in ["rx", "pc"]:
-        createDirectory(f"{dataPath}/{signalType}")
+        createDirectory(f"{dataPath}/{signalType}", verbose=verbose)
         for dirName in ["test", "train", "eval"]:
-            createDirectory(f"{dataPath}/{signalType}/{dirName}")
+            createDirectory(f"{dataPath}/{signalType}/{dirName}", verbose=verbose)
             for className in ["noise", "target"]:
-                createDirectory(f"{dataPath}/{signalType}/{dirName}/{className}")
+                createDirectory(f"{dataPath}/{signalType}/{dirName}/{className}", verbose=verbose)
                 
 def saveInfo(dataPath: str,
              radarParams: dict,
@@ -234,6 +238,7 @@ def createRadarData(dataPath: str,
                     nTrainData: int,
                     nTestData: int,
                     nEvalData: int,
+                    verbose: bool = False,
                     ) -> None:
     """ Creates all the signal data for the model.
 
@@ -263,6 +268,8 @@ def createRadarData(dataPath: str,
         Number of testing data samples.
     nEvalData : int
         Number of evaluation data samples.
+    verbose : bool
+        Print debug information, defaults to False.
 
     Raises
     ------
@@ -280,7 +287,7 @@ def createRadarData(dataPath: str,
     fullPath = f"../data/{dataPath}/{folderName}"
     
     # remove and create the directories
-    __createDirectories(fullPath)
+    __createDirectories(fullPath, verbose=verbose)
     
     print("\nDATA CREATION\n")
     
@@ -322,6 +329,7 @@ def createModelData(radarParams: dict,
                     nEvalData: int,
                     exampleSignal: bool,
                     createData: bool,
+                    verbose: bool = False
                     ) -> None:
     
     # get the name of the file that called it
@@ -334,11 +342,11 @@ def createModelData(radarParams: dict,
     
     # create the data folder if not present
     print("creating the main data folder ...")
-    createDirectory("../data")
+    createDirectory("../data", verbose=verbose)
     
     # create the model data folder
     print("creating the model data folder ...")
-    createDirectory(f"../data/{dataPath}")
+    createDirectory(f"../data/{dataPath}", verbose=verbose)
     
     # save the info
     saveInfo(dataPath=f"../data/{dataPath}",
@@ -376,6 +384,7 @@ def createModelData(radarParams: dict,
                                 radarParams=radarParamsSingle,
                                 nTrainData=nTrainData, 
                                 nTestData=nTestData, 
-                                nEvalData=nEvalData)
+                                nEvalData=nEvalData,
+                                verbose=verbose)
             
     print("\nCOMPLETED\n")

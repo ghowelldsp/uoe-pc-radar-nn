@@ -26,4 +26,5 @@ createModelData(radarParams=radarParams,
                 nTestData=10, 
                 nEvalData=100,
                 exampleSignal=False,
-                createData=True)
+                createData=True,
+                verbose=True)
