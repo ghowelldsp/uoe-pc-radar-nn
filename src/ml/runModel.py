@@ -94,8 +94,9 @@ def checkDatasetsExist(dataDirPath: str,
                     
 def trainModels(datasets: Dict,
                 modelParams: Dict,
-                plotResults: bool,
-                verboseOutput: bool,
+                evalModel: bool = True,
+                plotResults: bool = True,
+                verboseOutput: bool = True,
                 ) -> None:
     """ Trains model all datasets
 
@@ -144,10 +145,12 @@ def trainModels(datasets: Dict,
                  "optimiser": "Adam",
                  "optimiser learn rate": 1e-4
                  }
+    evalModel: bool
+        Evaluate trained model, defaults to True.
     plotResults : bool
-        Plot output results after training.
+        Plot output results after training, defaults to True.
     verboseOutput : bool
-        Verbose output.
+        Verbose output, defaults to True.
     """
     
     # change to the current working directory of the script
@@ -189,11 +192,13 @@ def trainModels(datasets: Dict,
                     # run model
                     trainModel(datasetPath=datasetPath, 
                                modelParams=modelParams,
+                               evalModel=evalModel,
                                plotResults=plotResults, 
                                verboseOutput=verboseOutput)
 
 def trainModel(datasetPath: str,
                modelParams: Dict,
+               evalModel: bool, 
                plotResults: bool,
                verboseOutput: bool,
                ) -> None:
@@ -227,6 +232,8 @@ def trainModel(datasetPath: str,
                  "optimiser": "Adam",
                  "optimiser learn rate": 1e-4
                  }
+    evalModel: bool
+        Evaluate trained model.
     plotResults : bool
         Plot output results after training.
     verboseOutput : bool
@@ -284,13 +291,15 @@ def trainModel(datasetPath: str,
                          epochs=modelParams["nEpochs"],
                          device=device)
     
-    print("\nEvaluating Model\n")
-    
-    # run evaluation on trained model
-    resultsPT = tt.eval(model=model,
-                        dataloader=evalDL,
-                        lossFn=lossFn,
-                        device=device)
+    if evalModel:
+        print("\nEvaluating Model\n")
+        # run evaluation on trained model
+        resultsPT = tt.eval(model=model,
+                            dataloader=evalDL,
+                            lossFn=lossFn,
+                            device=device)
+    else:
+        resultsPT = None
     
     print("\nResults\n")
     

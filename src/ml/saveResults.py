@@ -94,7 +94,7 @@ def saveTrainTestResults(datasetPathResults: Path,
     
 def saveProbTargetResults(datasetPathResults: Path,
                           fileName: str,
-                          results: Dict[str, np.ndarray]
+                          results: Dict[str, np.ndarray] | None
                           ) -> None:
     """ Saves the probability and target results.
     
@@ -106,7 +106,7 @@ def saveProbTargetResults(datasetPathResults: Path,
         Path to dataset.
     fileName : str
         Name of the results file.
-    results : Dict[str, np.ndarray]
+    results : Dict[str, np.ndarray] | None
         # TODO - define
     """
     
@@ -203,7 +203,7 @@ def saveInfoResults(datasetPathResults: Path,
 def saveAllResults(datasetPath: str,
                    modelInfo: modelInfoDict,
                    resultsTT: Dict[str, List],
-                   resultsPT: Dict[str, np.ndarray],
+                   resultsPT: Dict[str, np.ndarray] | None,
                    ) -> None:
     """ Saves all the results
 
@@ -226,7 +226,7 @@ def saveAllResults(datasetPath: str,
                 trainAcc: [0.3945, 0.3945],
                 testLoss: [1.2641, 1.5706],
                 testAcc: [0.3400, 0.2973]}
-    resultsPT : Dict[str, np.ndarray]
+    resultsPT : Dict[str, np.ndarray] | None
         # TODO - define
     """
     
@@ -261,8 +261,9 @@ def saveAllResults(datasetPath: str,
                          fileName=fileName,
                          results=resultsTT)
     
-    # save probability and target results
-    saveProbTargetResults(datasetPathResults=datasetPathResults,
-                          fileName=fileName,
-                          results=resultsPT)
+    if resultsPT is None:
+        # save probability and target results
+        saveProbTargetResults(datasetPathResults=datasetPathResults,
+                              fileName=fileName,
+                              results=resultsPT)
     

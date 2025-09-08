@@ -26,5 +26,6 @@ if __name__ == "__main__":
     # train model on all datasets
     trainModels(datasets=datasets,
                 modelParams=modelParams,
+                evalModel=False,
                 plotResults=False,
                 verboseOutput=False)
