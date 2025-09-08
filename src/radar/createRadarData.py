@@ -2,7 +2,7 @@ import numpy as np
 import os, sys, inspect, shutil
 import matplotlib.pyplot as plt
 
-from src.general.utils import createDirectory, removeDirectory
+from src.general.utils import createDirectory, removeDirectory, setSeeds
 from src.radar.pulseCompressionRadar import pulseCompRadar
 from src.general.distributions import distShortName
 
@@ -360,6 +360,9 @@ def createModelData(radarParams: dict,
              nTrainData=nTrainData,
              nTestData=nTestData,
              nEvalData=nEvalData)
+    
+    # set random seeds
+    setSeeds()
 
     for dist in radarParams["noiseDist"]:
         for snr in radarParams["snr"]:
