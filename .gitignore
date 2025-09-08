@@ -1,7 +1,14 @@
+# virtual environment folder
 .venv
 
+# folder used to store data
 /data
-/testing
+
+# folder used to store results 
 /results
 
+# general testing scripts
+/testing
+
+# general
 __pycache__
