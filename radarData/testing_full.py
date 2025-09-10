@@ -2,10 +2,10 @@
 import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.radar.createRadarData import createModelData
+from src.radar.createRadarData import createModelData, RadarParamsFull
 
 # radar params
-radarParams = {
+radarParams : RadarParamsFull = {
     "pulseTime": 20e-6,
     "pulseStartFreq": 0,
     "pulseRepFreq": 5e2,

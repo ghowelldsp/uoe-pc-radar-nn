@@ -1,34 +1,103 @@
 import numpy as np
-import os, sys, inspect, shutil
+import os, sys, inspect
 import matplotlib.pyplot as plt
+from typing import TypedDict, List
 
 from src.general.utils import createDirectory, removeDirectory, setSeeds
 from src.radar.pulseCompressionRadar import pulseCompRadar
 from src.general.distributions import distShortName
 
-def createExampleSignal(radarParams: dict) -> None:
-    """ Create an example signal using the parameters set in the radar params.
+class RadarParamsFull(TypedDict):
+    """ Definition of radar parameters structure
+
+    In the form:
+        pulseTime: float
+            The pulses time [s].
+        pulseStartFreq: int | float
+            Pulse start frequency [Hz].
+        pulseRepFreq: int | float
+            Pulse repetition frequency [Hz].
+        bandwidth: int | float
+            Bandwidth [Hz].
+        maxRange: int | float
+            Max range [m].
+        sampleRate: int | float
+            Sample rate [Hz].
+        targetRange: int | float
+            Target range [m].
+        snr: List[int | float]
+            List of SNR's to create data for, in dB.
+        maxRangeSnr: int | float
+            SNR at maximum range of radar in dB, specified by 'maxRange'.
+        targetPresent: bool
+            Creates a target signal if set to true.
+        noisePresent: bool
+            Creates noise signal if set to true.
+        noiseDist: List[str]
+            List of noise distribution types to create data for.
+    """
+    pulseTime: float
+    pulseStartFreq: int | float
+    pulseRepFreq: int | float
+    bandwidth: int | float
+    maxRange: int | float
+    sampleRate: int | float
+    targetRange: int | float
+    snr: List[int | float | str]
+    maxRangeSnr: int | float
+    targetPresent: bool
+    noisePresent: bool
+    noiseDist: List[str]
     
-    # TODO
+class RadarParamsSingle(TypedDict):
+    """ Definition of radar parameters structure
+
+    In the form:
+        pulseTime: float
+            The pulses time [s].
+        pulseStartFreq: int | float
+            Pulse start frequency [Hz].
+        pulseRepFreq: int | float
+            Pulse repetition frequency [Hz].
+        bandwidth: int | float
+            Bandwidth [Hz].
+        maxRange: int | float
+            Max range [m].
+        sampleRate: int | float
+            Sample rate [Hz].
+        targetRange: int | float
+            Target range [m].
+        snr: int | float
+            SNR [dB].
+        maxRangeSnr: int | float
+            SNR at maximum range of radar in dB, specified by 'maxRange'.
+        targetPresent: bool
+            Creates a target signal if set to true.
+        noisePresent: bool
+            Creates noise signal if set to true.
+        noiseDist: List[str]
+            Noise distribution type.
+    """
+    pulseTime: float
+    pulseStartFreq: int | float
+    pulseRepFreq: int | float
+    bandwidth: int | float
+    maxRange: int | float
+    sampleRate: int | float
+    targetRange: int | float
+    snr: int | float | str
+    maxRangeSnr: int | float
+    targetPresent: bool
+    noisePresent: bool
+    noiseDist: str
+
+def createExampleSignal(radarParams: RadarParamsSingle) -> None:
+    """ Create an example signal using the parameters set in the radar params.
 
     Parameters
     ----------
-    radarParams : dict
-        Dictionary of radar parameters.
-            {
-             pulseTime, # TODO
-             pulseStartFreq, 
-             pulseRepFreq, 
-             bandwidth, 
-             maxRange, 
-             sampleRate, 
-             targetRange, 
-             snr,
-             maxRangeSnr, 
-             targetPresent, 
-             noisePresent,
-             noiseDist
-             }
+    radarParams : RadarParamsSingle
+        Dictionary of radar parameters. Full specification can be found in 'RadarParamsSingle' class definition.
     """
     
     # create instance of the class
@@ -102,7 +171,7 @@ def __createDirectories(dataPath: str,
                 createDirectory(f"{dataPath}/{signalType}/{dirName}/{className}", verbose=verbose)
                 
 def saveInfo(dataPath: str,
-             radarParams: dict,
+             radarParams: RadarParamsFull,
              nTrainData: int,
              nTestData: int,
              nEvalData: int,
@@ -113,22 +182,8 @@ def saveInfo(dataPath: str,
     ----------
     dataPath : str
         Path to the model directory.
-    radarParams : dict
-        Dictionary of radar parameters.
-            {
-             pulseTime, # TODO
-             pulseStartFreq, 
-             pulseRepFreq, 
-             bandwidth, 
-             maxRange, 
-             sampleRate, 
-             targetRange, 
-             snr,
-             maxRangeSnr, 
-             targetPresent, 
-             noisePresent,
-             noiseDist
-             }
+    radarParams : RadarParamsFull
+        Dictionary of radar parameters. Full specification can be found in 'RadarParamsFull' class definition.
     nTrainData : int
         Number of training data samples.
     nTestData : int
@@ -167,7 +222,7 @@ def createSignalData(nDataSamples: int,
                      dataPath: str,
                      dataType: str,
                      pcr: pulseCompRadar,
-                     radarParams: dict
+                     radarParams: RadarParamsSingle
                      ) -> None:
     """ Creates the received and pulse compressed signal data
 
@@ -181,22 +236,8 @@ def createSignalData(nDataSamples: int,
         Type of data, i.e. training, testing or evaluation data.
     pcr : pulseCompRadar
         Handle to the pulse compression radar class.
-    radarParams : dict
-        Dictionary of radar parameters.
-            {
-             pulseTime, # TODO
-             pulseStartFreq, 
-             pulseRepFreq, 
-             bandwidth, 
-             maxRange, 
-             sampleRate, 
-             targetRange, 
-             snr,
-             maxRangeSnr, 
-             targetPresent, 
-             noisePresent,
-             noiseDist
-             }
+    radarParams : RadarParamsSingle
+        Dictionary of radar parameters. Full specification can be found in 'RadarParamsSingle' class definition.
     """
     
     # create random the target ranges
@@ -240,7 +281,7 @@ def createSignalData(nDataSamples: int,
         np.save(f"{dataPath}/pc/{dataType}/noise/{i}.npy", np.abs(pcSignal).astype(np.float32))
 
 def createRadarData(dataPath: str,
-                    radarParams: dict,
+                    radarParams: RadarParamsSingle,
                     nTrainData: int,
                     nTestData: int,
                     nEvalData: int,
@@ -252,22 +293,8 @@ def createRadarData(dataPath: str,
     ----------
     dataFolder : str
         Path to the main data directory.
-    radarParams : dict
-        Dictionary of radar parameters.
-            {
-             pulseTime, # TODO
-             pulseStartFreq, 
-             pulseRepFreq, 
-             bandwidth, 
-             maxRange, 
-             sampleRate, 
-             targetRange, 
-             snr,
-             maxRangeSnr, 
-             targetPresent, 
-             noisePresent,
-             noiseDist
-             }
+    radarParams : RadarParamsSingle
+        Dictionary of radar parameters. Full specification can be found in 'RadarParamsSingle' class definition.
     nTrainData : int
         Number of training data samples.
     nTestData : int
@@ -329,7 +356,7 @@ def createRadarData(dataPath: str,
                      pcr=pcr,
                      radarParams=radarParams)
 
-def createModelData(radarParams: dict,
+def createModelData(radarParams: RadarParamsFull,
                     nTrainData: int,
                     nTestData: int,
                     nEvalData: int,
@@ -337,6 +364,25 @@ def createModelData(radarParams: dict,
                     createData: bool,
                     verbose: bool = False
                     ) -> None:
+    """ Creates all the model data
+
+    Parameters
+    ----------
+    radarParams : RadarParamsFull
+        Dictionary of radar parameters. Full specification can be found in 'RadarParamsFull' class definition.
+    nTrainData : int
+        Number of training data samples.
+    nTestData : int
+        Number of testing data samples.
+    nEvalData : int
+        Number of evaluation data samples.
+    exampleSignal : bool
+        Create an example signal if set to true.
+    createData : bool
+        Creates the model data if set to true.
+    verbose : bool, optional
+        Prints of debug information if true, by default False.
+    """
     
     # get the name of the file that called it
     callerFrame = inspect.stack()[1]
@@ -368,7 +414,7 @@ def createModelData(radarParams: dict,
         for snr in radarParams["snr"]:
 
             # radar params
-            radarParamsSingle = {
+            radarParamsSingle : RadarParamsSingle = {
                 "pulseTime": radarParams["pulseTime"],
                 "pulseStartFreq": radarParams["pulseStartFreq"],
                 "pulseRepFreq": radarParams["pulseRepFreq"],
@@ -385,7 +431,7 @@ def createModelData(radarParams: dict,
                 
             # create an example signal, prints the info and plots
             if exampleSignal:
-                createExampleSignal(radarParams)
+                createExampleSignal(radarParamsSingle)
 
             # create model data
             if createData:
