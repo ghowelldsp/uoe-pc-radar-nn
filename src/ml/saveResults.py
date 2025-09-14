@@ -48,7 +48,7 @@ class modelInfoDict(TypedDict):
     """
     model: nn.Module
     signalLength: int
-    modelType: bool
+    modelType: str
     device: torch.device
     lossFn: str
     optimiser: str

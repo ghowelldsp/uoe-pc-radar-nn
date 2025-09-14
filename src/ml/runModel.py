@@ -1,12 +1,9 @@
-from pathlib import Path
 import numpy as np
 import torch
+import os
+import sys
 from torch import nn
-from typing import Dict
-
-# add the top directory to the python system path
-import sys, os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from typing import TypedDict, Dict, List, Union
 
 import src.ml.dataloader as dl
 import src.ml.models as mdl
@@ -15,9 +12,60 @@ import src.ml.trainTest as tt
 from src.ml.saveResults import modelInfoDict, saveAllResults
 from src.ml.resultsEval import plotLossCurves
 from src.general.distributions import distShortName
+
+Datasets = Dict[str, List[List[str]]]
+# Dictionary of the datasets. 
+# In the form:
+#     {"datasetDirectory":
+#         [
+#             ["noiseDist1", "noiseDist2"],
+#             ["snr1", "snr2"],
+#             ["signalType1", "signalType2"],
+#         ]
+#     }
+# For example:
+#     {"syntheticData": 
+#         [
+#             ["complex gaussian", "complex weibull"], 
+#             ["10", "5"], 
+#             ["pc", "rx"]
+#         ]
+#     }
+    
+class ModelParams(TypedDict):
+    """ Dictionary of Pytorch model parameters.
+    
+    nEpochs: int
+         Number of epochs.
+    batchSize: int
+        Batch size to create.
+    modelType: str
+        Model to train on.
+    lossFn: str
+        Loss function.
+    optimiser: str
+        Optimiser.
+    optimiserLR: float
+        Optimister learning rate.
+        
+    For example:
+        {"nEpochs": 2,
+            "batchSize": 2,
+            "modelType": "dynamicCNN1",
+            "loss function": "Cross Entropy Loss",
+            "optimiser": "Adam",
+            "optimiser learn rate": 1e-4
+        }
+    """
+    nEpochs: int
+    batchSize: int
+    modelType: str
+    lossFn: str
+    optimiser: str
+    optimiserLR: float
     
 def checkDatasetsExist(dataDirPath: str,
-                       datasets: Dict,
+                       datasets: Datasets,
                        ) -> None:
     """ Checks if all datasets exist
 
@@ -25,26 +73,8 @@ def checkDatasetsExist(dataDirPath: str,
     ----------
     dataDirPath : str
         The path to the data directory.
-    datasets : Dict
-        Dictionary of the datasets. 
-        
-        In the form:
-            {"datasetDirectory":
-                [
-                    ["noiseDist1", "noiseDist2"],
-                    ["snr1", "snr2"],
-                    ["signalType1", "signalType2"],
-                ]
-            }
-            
-        For example:
-            {"syntheticData": 
-                [
-                    ["complex gaussian", "complex weibull"], 
-                    ["10", "5"], 
-                    ["pc", "rx"]
-                ]
-            }
+    datasets : Datasets
+        Dictionary of the datasets to train. Defined in 'Datasets' class.
 
     Raises
     ------
@@ -91,9 +121,125 @@ def checkDatasetsExist(dataDirPath: str,
                     # check if dataset exists
                     if not os.path.isdir(datasetPath):
                         raise ValueError(f"dataset directory {datasetPath} does not exist")
-                    
-def trainModels(datasets: Dict,
-                modelParams: Dict,
+
+def trainModel(datasetPath: str,
+               modelParams: ModelParams,
+               evalModel: bool, 
+               plotResults: bool,
+               verboseOutput: bool,
+               ) -> None:
+    """ Trains model on a dataset
+
+    Parameters
+    ----------
+    datasetPath : str
+        Path to dataset to train on.
+    modelParams: ModelParams
+        Dictionary of Pytorch model parameters. Defined in 'ModelParams' class.
+    evalModel: bool
+        Evaluate trained model.
+    plotResults : bool
+        Plot output results after training.
+    verboseOutput : bool
+        Verbose output.
+    """
+    
+    print(f"\nRunning on dataset: {datasetPath}")
+    
+    # set random seed 
+    setSeeds()
+    
+    # create dataloaders
+    trainDL, testDL, evalDL = dl.createDataloaders(datasetPath=datasetPath,
+                                                   batchSize=modelParams["batchSize"],
+                                                   verboseOutput=verboseOutput)
+
+    # check availible devices
+    device = availableDevices()
+    
+    # load one data sample to get the input feature length
+    # TODO - make this better
+    signalLen = len(np.load(f"{datasetPath}/train/target/0.npy"))
+    
+    # load model
+    model = mdl.loadModel(modelType=modelParams["modelType"],
+                          device=device,
+                          signalLen=signalLen,
+                          verboseOutput=verboseOutput)
+
+    print("\nTraining and Testing Model\n")
+
+    # select loss function
+    match modelParams["lossFn"]:
+        case "Cross Entropy Loss":
+            lossFn = nn.CrossEntropyLoss()
+        case "Binary Cross Entropy":
+            lossFn = nn.BCELoss()
+        case _:
+            raise ValueError(f"loss function {modelParams['lossFn']} is invalid")
+        
+    # select optimiser
+    match modelParams["optimiser"]:
+        case "Adam":
+            optimizer = torch.optim.Adam(params=model.parameters(), 
+                                         lr=modelParams['optimiserLR'])
+        case _:
+            raise ValueError(f"optimizer {modelParams['optimiser']} is invalid")
+
+    # train and test function
+    resultsTT = tt.train(model=model,
+                         trainDL=trainDL,
+                         testDL=testDL,
+                         lossFn=lossFn,
+                         optimizer=optimizer,
+                         epochs=modelParams["nEpochs"],
+                         device=device)
+    
+    if evalModel:
+        print("\nEvaluating Model\n")
+        # run evaluation on trained model
+        resultsPT = tt.eval(model=model,
+                            dataloader=evalDL,
+                            lossFn=lossFn,
+                            device=device)
+    else:
+        resultsPT = None
+    
+    print("\nResults\n")
+    
+    # create dictionary of model information
+    modelInfo : modelInfoDict = {
+        "model": model,
+        "signalLength": signalLen,
+        "modelType": modelParams['modelType'],
+        "device": device,
+        "lossFn": modelParams['lossFn'],
+        "optimiser": modelParams['optimiser'],
+        "optimiserLR": modelParams['optimiserLR'],
+        "nEpochs": modelParams['nEpochs'],
+        "batchSize":  modelParams['batchSize'],
+        "nTrainBatchs": len(trainDL),
+        "nTrainSamples": len(trainDL.dataset), # type: ignore
+        "nTestBatchs": len(testDL),
+        "nTestSamples": len(testDL.dataset), # type: ignore
+        "nEvalBatchs": len(evalDL),
+        "nEvalSamples": len(evalDL.dataset), # type: ignore
+    }
+    
+    # save results
+    saveAllResults(datasetPath=datasetPath,
+                   modelInfo=modelInfo,
+                   resultsTT=resultsTT,
+                   resultsPT=resultsPT)
+    
+    # plot the loss curves
+    if plotResults:
+        plotLossCurves(resultsTT)
+        
+    print("\nCompleted\n")
+    
+def trainModels(datasets: Datasets,
+                modelParams: ModelParams,
                 evalModel: bool = True,
                 plotResults: bool = True,
                 verboseOutput: bool = True,
@@ -195,141 +341,3 @@ def trainModels(datasets: Dict,
                                evalModel=evalModel,
                                plotResults=plotResults, 
                                verboseOutput=verboseOutput)
-
-def trainModel(datasetPath: str,
-               modelParams: Dict,
-               evalModel: bool, 
-               plotResults: bool,
-               verboseOutput: bool,
-               ) -> None:
-    """ Trains model on a dataset
-
-    Parameters
-    ----------
-    datasetPath : str
-        Path to dataset to train on.
-    modelParams: Dict
-        Dictionary of Pytorch model parameters.
-            In the form:
-                {"nEpochs": int,
-                    Number of epochs.
-                 "batchSize": int,
-                    Batch size to create.
-                 "modelType": str,
-                    Model to train on.
-                 "loss function": str,
-                    Loss function.
-                 "optimiser": "Adam",
-                    Optimiser.
-                 "optimiser learn rate": int | float}
-                    Optimister learn rate.
-                }
-            For example:
-                {"nEpochs": 2,
-                 "batchSize": 2,
-                 "modelType": "dynamicCNN1",
-                 "loss function": "Cross Entropy Loss",
-                 "optimiser": "Adam",
-                 "optimiser learn rate": 1e-4
-                 }
-    evalModel: bool
-        Evaluate trained model.
-    plotResults : bool
-        Plot output results after training.
-    verboseOutput : bool
-        Verbose output.
-    """
-    
-    print(f"\nRunning on dataset: {datasetPath}")
-    
-    # set random seed 
-    setSeeds()
-    
-    # create dataloaders
-    trainDL, testDL, evalDL = dl.createDataloaders(datasetPath=datasetPath,
-                                                   batchSize=modelParams["batchSize"],
-                                                   verboseOutput=verboseOutput)
-
-    # check availible devices
-    device = availableDevices()
-    
-    # load one data sample to get the input feature length
-    # TODO - make this better
-    signalLen = len(np.load(f"{datasetPath}/train/target/0.npy"))
-    
-    # load model
-    model = mdl.loadModel(modelType=modelParams["modelType"],
-                          device=device,
-                          signalLen=signalLen,
-                          verboseOutput=verboseOutput)
-
-    print("\nTraining and Testing Model\n")
-
-    # select loss function
-    match modelParams["loss function"]:
-        case "Cross Entropy Loss":
-            lossFn = nn.CrossEntropyLoss()
-        case "Binary Cross Entropy":
-            lossFn = nn.BCELoss()
-        case _:
-            raise ValueError(f"loss function {modelParams['loss function']} is invalid")
-        
-    # select optimiser
-    match modelParams["optimiser"]:
-        case "Adam":
-            optimizer = torch.optim.Adam(params=model.parameters(), 
-                                         lr=modelParams['optimiser learn rate'])
-        case _:
-            raise ValueError(f"optimizer {modelParams['optimiser']} is invalid")
-
-    # train and test function
-    resultsTT = tt.train(model=model,
-                         trainDL=trainDL,
-                         testDL=testDL,
-                         lossFn=lossFn,
-                         optimizer=optimizer,
-                         epochs=modelParams["nEpochs"],
-                         device=device)
-    
-    if evalModel:
-        print("\nEvaluating Model\n")
-        # run evaluation on trained model
-        resultsPT = tt.eval(model=model,
-                            dataloader=evalDL,
-                            lossFn=lossFn,
-                            device=device)
-    else:
-        resultsPT = None
-    
-    print("\nResults\n")
-    
-    # create dictionary of model information
-    modelInfo : modelInfoDict = {
-        "model": model,
-        "signalLength": signalLen,
-        "modelType": modelParams['modelType'],
-        "device": device,
-        "lossFn": modelParams['loss function'],
-        "optimiser": modelParams['optimiser'],
-        "optimiserLR": modelParams['optimiser learn rate'],
-        "nEpochs": modelParams['nEpochs'],
-        "batchSize":  modelParams['batchSize'],
-        "nTrainBatchs": len(trainDL),
-        "nTrainSamples": len(trainDL.dataset), # type: ignore
-        "nTestBatchs": len(testDL),
-        "nTestSamples": len(testDL.dataset), # type: ignore
-        "nEvalBatchs": len(evalDL),
-        "nEvalSamples": len(evalDL.dataset), # type: ignore
-    }
-    
-    # save results
-    saveAllResults(datasetPath=datasetPath,
-                   modelInfo=modelInfo,
-                   resultsTT=resultsTT,
-                   resultsPT=resultsPT)
-    
-    # plot the loss curves
-    if plotResults:
-        plotLossCurves(resultsTT)
-        
-    print("\nCompleted\n")
