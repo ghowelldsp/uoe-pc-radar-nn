@@ -18,7 +18,7 @@ if __name__ == "__main__":
     # model parameters
     modelParams : ModelParams = {"nEpochs": 3,
                                  "batchSize": 2,
-                                 "modelType": "dynamicCNN1",
+                                 "modelType": "basic1",
                                  "lossFn": "Cross Entropy Loss",
                                  "optimiser": "Adam",
                                  "optimiserLR": 1e-4}

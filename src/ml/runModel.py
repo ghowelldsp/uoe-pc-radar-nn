@@ -160,12 +160,6 @@ def trainModel(datasetPath: str,
     # load one data sample to get the input feature length
     # TODO - make this better
     signalLen = len(np.load(f"{datasetPath}/train/target/0.npy"))
-    
-    # load model
-    model = mdl.loadModel(modelType=modelParams["modelType"],
-                          device=device,
-                          signalLen=signalLen,
-                          verboseOutput=verboseOutput)
 
     print("\nTraining and Testing Model\n")
 
@@ -173,10 +167,19 @@ def trainModel(datasetPath: str,
     match modelParams["lossFn"]:
         case "Cross Entropy Loss":
             lossFn = nn.CrossEntropyLoss()
+            nOutFeatures = 2
         case "Binary Cross Entropy":
             lossFn = nn.BCELoss()
+            nOutFeatures = 1
         case _:
             raise ValueError(f"loss function {modelParams['lossFn']} is invalid")
+        
+    # load model
+    model = mdl.loadModel(modelType=modelParams["modelType"],
+                          device=device,
+                          signalLen=signalLen,
+                          nOutFeatures=nOutFeatures,
+                          verboseOutput=verboseOutput)
         
     # select optimiser
     match modelParams["optimiser"]:
