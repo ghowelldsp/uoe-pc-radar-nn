@@ -116,9 +116,9 @@ def plotLossCurves(results: Dict) -> None:
         Dictionary containing list of training and testing loss and accuracies. 
             In the form of;
                 {"trainLoss": [...],
-                "trainAcc": [...],
-                "testLoss": [...],
-                "testAcc": [...]}
+                 "trainAcc": [...],
+                 "testLoss": [...],
+                 "testAcc": [...]}
     """
     
     # get training and testing losses

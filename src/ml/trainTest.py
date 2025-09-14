@@ -245,7 +245,7 @@ def eval(model: torch.nn.Module,
     Returns
     -------
     Dict[str, List]
-        #TODO
+        A dictionary of probabilities and targets. Each metric has a value in a numpy array for each epoch.
     """
     
     evalLoss, evalAcc, probs, targets = testStep(model=model,

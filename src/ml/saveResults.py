@@ -107,7 +107,7 @@ def saveProbTargetResults(datasetPathResults: Path,
     fileName : str
         Name of the results file.
     results : Dict[str, np.ndarray] | None
-        # TODO - define
+        A dictionary of probabilities and targets. Each metric has a value in a numpy array for each epoch.
     """
     
     # save results
@@ -227,7 +227,7 @@ def saveAllResults(datasetPath: str,
                 testLoss: [1.2641, 1.5706],
                 testAcc: [0.3400, 0.2973]}
     resultsPT : Dict[str, np.ndarray] | None
-        # TODO - define
+        A dictionary of probabilities and targets. Each metric has a value in a numpy array for each epoch.
     """
     
     # create the results folder
