@@ -172,11 +172,14 @@ def __createDirectories(dataPath: str,
                 
 def saveInfo(dataPath: str,
              radarParams: RadarParamsFull,
+             sigLen: int,
              nTrainData: int,
              nTestData: int,
              nEvalData: int,
              ) -> None:
     """ Save an information file of the key data about the model.
+    
+    # TODO - might be better to get the radar info from the class info method and use this instead of the radar params
 
     Parameters
     ----------
@@ -184,6 +187,8 @@ def saveInfo(dataPath: str,
         Path to the model directory.
     radarParams : RadarParamsFull
         Dictionary of radar parameters. Full specification can be found in 'RadarParamsFull' class definition.
+    sigLen: int
+        Length of the signal.
     nTrainData : int
         Number of training data samples.
     nTestData : int
@@ -209,6 +214,7 @@ def saveInfo(dataPath: str,
             f.write(f"Bandwidth: {radarParams['bandwidth']} Hz\n")
             f.write(f"Max Range: {radarParams['maxRange']} m\n")
             f.write(f"Sample Rate: {radarParams['sampleRate']} Hz\n")
+            f.write(f"Signal Length: {sigLen} samples\n")
             
             f.close()
     except PermissionError:
@@ -286,7 +292,7 @@ def createRadarData(dataPath: str,
                     nTestData: int,
                     nEvalData: int,
                     verbose: bool = False,
-                    ) -> None:
+                    ) -> int:
     """ Creates all the signal data for the model.
 
     Parameters
@@ -332,6 +338,9 @@ def createRadarData(dataPath: str,
                          sampleRate=radarParams["sampleRate"],
                          maxRange=radarParams["maxRange"])
     
+    # get the signal length
+    sigLen = pcr.signalLength
+    
     print("Training Data")
     
     createSignalData(nDataSamples=nTrainData,
@@ -355,6 +364,8 @@ def createRadarData(dataPath: str,
                      dataType="eval",
                      pcr=pcr,
                      radarParams=radarParams)
+    
+    return sigLen
 
 def createModelData(radarParams: RadarParamsFull,
                     nTrainData: int,
@@ -400,13 +411,6 @@ def createModelData(radarParams: RadarParamsFull,
     print("creating the model data folder ...")
     createDirectory(f"../data/{dataPath}", verbose=verbose)
     
-    # save the info
-    saveInfo(dataPath=f"../data/{dataPath}",
-             radarParams=radarParams,
-             nTrainData=nTrainData,
-             nTestData=nTestData,
-             nEvalData=nEvalData)
-    
     # set random seeds
     setSeeds()
 
@@ -435,11 +439,20 @@ def createModelData(radarParams: RadarParamsFull,
 
             # create model data
             if createData:
-                createRadarData(dataPath=dataPath,
-                                radarParams=radarParamsSingle,
-                                nTrainData=nTrainData, 
-                                nTestData=nTestData, 
-                                nEvalData=nEvalData,
-                                verbose=verbose)
-            
+                sigLen = createRadarData(dataPath=dataPath,
+                                         radarParams=radarParamsSingle,
+                                         nTrainData=nTrainData, 
+                                         nTestData=nTestData, 
+                                         nEvalData=nEvalData,
+                                         verbose=verbose)
+    
+    # save the info
+    if createData:
+        saveInfo(dataPath=f"../data/{dataPath}",
+                 radarParams=radarParams,
+                 sigLen=sigLen, # type: ignore
+                 nTrainData=nTrainData,
+                 nTestData=nTestData,
+                 nEvalData=nEvalData)
+    
     print("\nCOMPLETED\n")
